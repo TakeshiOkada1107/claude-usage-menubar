@@ -1,0 +1,5 @@
+# ビルド生成物（.app は build.sh で作り直せる）
+build/
+
+# macOS
+.DS_Store
