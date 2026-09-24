@@ -26,8 +26,10 @@ enum Config {
         .appendingPathComponent(".claude/usage-snapshot.json")
     /// スナップショットの mtime を見る間隔。読むのは変化したときだけ。
     static let snapshotPollInterval: TimeInterval = 2
-    /// この時間更新が無ければ「Claude Code が動いていない」とみなし淡色表示にする。
-    static let staleThreshold: TimeInterval = 15 * 60
+    /// この時間更新が無ければ「Claude Code が動いていない」とみなし、
+    /// 淡色表示にしたうえでメニューバーに経過を併記する。
+    /// 色の差だけでは古さに気づけないため、短めに取る。
+    static let staleThreshold: TimeInterval = 3 * 60
     /// ccusage は CPU を数秒使うため、この間隔でしか回さない。
     static let breakdownTTL: TimeInterval = 5 * 60
     /// npx のレジストリ解決を避けるためバージョンを固定する（statusline.sh と揃える）。
@@ -205,6 +207,15 @@ enum Format {
         if secs < 3600 { return "\(secs / 60) 分前" }
         if secs < 86400 { return "\(secs / 3600) 時間前" }
         return "\(secs / 86400) 日前"
+    }
+
+    /// メニューバーに併記する経過。幅を取らないよう空白を詰める。
+    /// 併記されるのは staleThreshold を超えたときだけなので、秒は扱わない。
+    static func elapsedCompact(since date: Date) -> String {
+        let secs = Int(Date().timeIntervalSince(date))
+        if secs < 3600 { return "\(max(secs, 0) / 60)分前" }
+        if secs < 86400 { return "\(secs / 3600)時間前" }
+        return "\(secs / 86400)日前"
     }
 
     /// メニュー内のバーと％の色。淡色表示のときは情報が古いので色を出さない。
@@ -508,6 +519,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 attributes: [
                     .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold),
                     .foregroundColor: Format.statusBarColor(for: window.usedPercentage, stale: stale),
+                ]
+            ))
+        }
+
+        // 淡色化だけでは見落とすため、古い値には経過を添えて明示する。
+        if stale {
+            title.append(NSAttributedString(
+                string: " (\(Format.elapsedCompact(since: snapshot.updatedAt)))",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 11),
+                    .foregroundColor: NSColor.tertiaryLabelColor,
                 ]
             ))
         }
