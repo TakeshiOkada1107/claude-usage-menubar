@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 APP_NAME="ClaudeUsage"
-BUNDLE_ID="local.okada.claudeusage"
+BUNDLE_ID="io.github.takeshiokada1107.claudeusage"
 VERSION="1.0.0"
 BUILD_DIR="build"
 APP="$BUILD_DIR/$APP_NAME.app"
